@@ -21,6 +21,7 @@ func (t *Timer) Pause() {
 	t.used += time.Now().UnixNano() - t.t
 }
 
+// 系统初始化时从
 func (t *Timer) Used() int64 {
 	return (time.Now().UnixNano() - t.t) + t.used
 }

@@ -2,10 +2,11 @@ package download
 
 import (
 	"encoding/json"
-	"go.etcd.io/bbolt"
 	"os"
 	"path/filepath"
 	"reflect"
+
+	"go.etcd.io/bbolt"
 )
 
 type Storage interface {
@@ -20,6 +21,7 @@ type Storage interface {
 	Clear() error
 }
 
+// 例：p &[]*Task v []Task
 func changeValue(p any, v any) {
 	if v == nil {
 		return
@@ -30,10 +32,10 @@ func changeValue(p any, v any) {
 		if rv.Len() == 0 {
 			return
 		}
-		// get underlying type
+		// get underlying type 例 tp此时为*Task
 		tp := reflect.TypeOf(p).Elem().Elem()
 		for i := 0; i < rv.Len(); i++ {
-			// convert to underlying type
+			// convert to underlying type 例：这句话就是把Task转为*Task
 			vv := rv.Index(i).Elem().Convert(tp)
 			rp.Elem().Set(reflect.Append(rp.Elem(), vv))
 		}
@@ -110,6 +112,7 @@ const (
 	dbFile = "gopeed.db"
 )
 
+// 这是一个简单的键值对数据库
 type BoltStorage struct {
 	db   *bbolt.DB
 	path string
@@ -171,10 +174,14 @@ func (b *BoltStorage) Get(bucket string, key string, v any) (bool, error) {
 
 func (b *BoltStorage) List(bucket string, v any) error {
 	list := make([]any, 0)
+	//TypeOf返回v的动态类型，必须是Array，Chan，Map，Point或Slice
+	//Elem返回动态类型的元素类型，比如v是&[]*Task，那么第一个Elem返回[]*Task
+	//第二个Elem返回*Task
 	tv := reflect.TypeOf(v).Elem().Elem()
 	if err := b.db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
+		b := tx.Bucket([]byte(bucket)) //查询桶
 		if err := b.ForEach(func(k, v []byte) error {
+			//接着上面的例子，此时tv.Elem返回的是Task
 			data := reflect.New(tv.Elem()).Interface()
 			if err := json.Unmarshal(v, &data); err != nil {
 				return err

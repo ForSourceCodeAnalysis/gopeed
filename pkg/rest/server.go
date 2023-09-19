@@ -3,13 +3,14 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"net"
+	"net/http"
+
 	"github.com/GopeedLab/gopeed/pkg/download"
 	"github.com/GopeedLab/gopeed/pkg/rest/model"
 	"github.com/GopeedLab/gopeed/pkg/util"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"net"
-	"net/http"
 )
 
 var (
@@ -33,7 +34,7 @@ func Start(startCfg *model.StartConfig) (int, error) {
 
 	port := 0
 	if addr, ok := listener.Addr().(*net.TCPAddr); ok {
-		port = addr.Port
+		port = addr.Port //获取监听的端口
 	}
 	return port, nil
 }
@@ -51,6 +52,7 @@ func Stop() {
 	}
 }
 
+// 创建一个http服务
 func BuildServer(startCfg *model.StartConfig) (*http.Server, net.Listener, error) {
 	if startCfg == nil {
 		startCfg = &model.StartConfig{}
@@ -72,7 +74,7 @@ func BuildServer(startCfg *model.StartConfig) (*http.Server, net.Listener, error
 		return nil, nil, err
 	}
 
-	if startCfg.Network == "unix" {
+	if startCfg.Network == "unix" { //如果监听的是unix socket，先把旧的文件删除，避免启动服务时报错
 		util.SafeRemove(startCfg.Address)
 	}
 
@@ -81,6 +83,7 @@ func BuildServer(startCfg *model.StartConfig) (*http.Server, net.Listener, error
 		return nil, nil, err
 	}
 
+	//路由
 	var r = mux.NewRouter()
 	r.Methods(http.MethodPost).Path("/api/v1/resolve").HandlerFunc(Resolve)
 	r.Methods(http.MethodPost).Path("/api/v1/tasks").HandlerFunc(CreateTask)

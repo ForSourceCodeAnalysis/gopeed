@@ -2,12 +2,6 @@ package download
 
 import (
 	"errors"
-	"github.com/GopeedLab/gopeed/internal/controller"
-	"github.com/GopeedLab/gopeed/internal/fetcher"
-	"github.com/GopeedLab/gopeed/pkg/base"
-	"github.com/GopeedLab/gopeed/pkg/util"
-	gonanoid "github.com/matoous/go-nanoid/v2"
-	"github.com/virtuald/go-paniclog"
 	"math"
 	"os"
 	"path"
@@ -17,6 +11,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/GopeedLab/gopeed/internal/controller"
+	"github.com/GopeedLab/gopeed/internal/fetcher"
+	"github.com/GopeedLab/gopeed/pkg/base"
+	"github.com/GopeedLab/gopeed/pkg/util"
+	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/virtuald/go-paniclog"
 )
 
 const (
@@ -79,12 +80,13 @@ func NewDownloader(cfg *DownloaderConfig) *Downloader {
 }
 
 func (d *Downloader) Setup() error {
-	// setup storage
+	// setup storage 创建三个存储桶 task，save，config
 	if err := d.storage.Setup([]string{bucketTask, bucketSave, bucketConfig}); err != nil {
 		return err
 	}
-	// load config from storage
+	// load config from storage 如果config存储桶中没有config，创建一个新的FirstLoad=true
 	var cfg DownloaderStoreConfig
+	//从存储桶中取出数据，如果数据存在就保存到cfg变量里面
 	exist, err := d.storage.Get(bucketConfig, "config", &cfg)
 	if err != nil {
 		return err
@@ -113,7 +115,7 @@ func (d *Downloader) Setup() error {
 				tasks = append(tasks[:i], tasks[i+1:]...)
 				continue
 			}
-			initTask(task)
+			initTask(task) //初始化任务
 			if task.Status != base.DownloadStatusDone && task.Status != base.DownloadStatusError {
 				task.Status = base.DownloadStatusPause
 			}

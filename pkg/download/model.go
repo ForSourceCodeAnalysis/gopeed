@@ -1,6 +1,9 @@
 package download
 
 import (
+	"sync"
+	"time"
+
 	"github.com/GopeedLab/gopeed/internal/controller"
 	"github.com/GopeedLab/gopeed/internal/fetcher"
 	"github.com/GopeedLab/gopeed/internal/protocol/bt"
@@ -8,8 +11,6 @@ import (
 	"github.com/GopeedLab/gopeed/pkg/base"
 	"github.com/GopeedLab/gopeed/pkg/util"
 	gonanoid "github.com/matoous/go-nanoid/v2"
-	"sync"
-	"time"
 )
 
 type ResolveResult struct {
@@ -67,9 +68,10 @@ func (t *Task) calcSpeed(downloaded int64, usedTime float64) int64 {
 	return int64(float64(total) / float64(len(t.speedArr)) / usedTime)
 }
 
+// 下载器配置
 type DownloaderConfig struct {
-	Controller    *controller.Controller
-	FetchBuilders []fetcher.FetcherBuilder
+	Controller    *controller.Controller   //下载控制器
+	FetchBuilders []fetcher.FetcherBuilder //下载器实例
 
 	RefreshInterval int `json:"refreshInterval"` // RefreshInterval time duration to refresh task progress(ms)
 	Storage         Storage
@@ -107,6 +109,7 @@ type DownloaderStoreConfig struct {
 	Extra          map[string]any `json:"extra"`          // Extra is the extra config
 }
 
+// 最大并行下载数 这个只处理了MaxRunning
 func (cfg *DownloaderStoreConfig) Init() *DownloaderStoreConfig {
 	if cfg.MaxRunning == 0 {
 		cfg.MaxRunning = 3

@@ -13,24 +13,25 @@ const (
 )
 
 type StartConfig struct {
-	Network         string  `json:"network"`
-	Address         string  `json:"address"`
-	RefreshInterval int     `json:"refreshInterval"`
-	Storage         Storage `json:"storage"`
-	StorageDir      string  `json:"storageDir"`
-	ApiToken        string  `json:"apiToken"`
+	Network         string  `json:"network"`         //网络类型，默认tcp
+	Address         string  `json:"address"`         //监听地址，包括端口
+	RefreshInterval int     `json:"refreshInterval"` //刷新间隔
+	Storage         Storage `json:"storage"`         //存储类型
+	StorageDir      string  `json:"storageDir"`      //存储目录
+	ApiToken        string  `json:"apiToken"`        //api token
 
-	WebEnable    bool
-	WebFS        fs.FS
-	WebBasicAuth *WebBasicAuth
+	WebEnable    bool          //是否使能web
+	WebFS        fs.FS         //web文件系统
+	WebBasicAuth *WebBasicAuth //web认证
 }
 
+// 配置初始化
 func (cfg *StartConfig) Init() *StartConfig {
 	if cfg.Network == "" {
 		cfg.Network = "tcp"
 	}
 	if cfg.Address == "" {
-		cfg.Address = "127.0.0.1:0"
+		cfg.Address = "127.0.0.1:0" //端口是0时，会自动选择一个可用的随机端口
 	}
 	if cfg.RefreshInterval == 0 {
 		cfg.RefreshInterval = 350
