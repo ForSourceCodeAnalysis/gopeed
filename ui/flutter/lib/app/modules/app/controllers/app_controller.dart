@@ -69,6 +69,7 @@ final allTrackerSubscribeUrlCdns = Map.fromIterable(allTrackerSubscribeUrls,
 class AppController extends GetxController with WindowListener, TrayListener {
   static StartConfig? _defaultStartConfig;
 
+//后面的.obs是GetX包的语法，带.obs标志的会变成可观察的
   final startConfig = StartConfig().obs;
   final runningPort = 0.obs;
   final downloaderConfig = DownloaderConfig().obs;

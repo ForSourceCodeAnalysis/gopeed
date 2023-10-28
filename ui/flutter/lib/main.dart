@@ -22,8 +22,10 @@ void main() async {
 }
 
 Future<void> init() async {
+  //参考 https://juejin.cn/post/7031196891358429220
   WidgetsFlutterBinding.ensureInitialized();
   if (Util.isDesktop()) {
+    //桌面应用特殊处理，注意是window，不是windows，所以不是针对windows系统的，而是针对桌面应用的
     await windowManager.ensureInitialized();
     const windowOptions = WindowOptions(
       size: Size(800, 600),
@@ -36,7 +38,9 @@ Future<void> init() async {
       await windowManager.setPreventClose(true);
     });
   }
-
+//Get是一个轻量但强大的flutter包，可以实现状态管理，依赖管理，导航管理，类似于一个容器
+//参考https://pub-web.flutter-io.cn/packages/get
+//注入依赖，把AppController实例注入到Get中，方便后续的管理
   final controller = Get.put(AppController());
   try {
     await controller.loadStartConfig();
