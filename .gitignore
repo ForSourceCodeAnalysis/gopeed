@@ -13,6 +13,8 @@
 
 .idea/
 
+.vscode/
+
 bin/
 
 .torrent.db

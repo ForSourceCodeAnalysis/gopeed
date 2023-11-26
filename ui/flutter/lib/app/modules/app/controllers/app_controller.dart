@@ -66,17 +66,26 @@ final allTrackerSubscribeUrlCdns = Map.fromIterable(allTrackerSubscribeUrls,
       return ret;
     });
 
+//这是一个主要的控制器，很多功能的实现都是在这个控制器里
 class AppController extends GetxController with WindowListener, TrayListener {
   static StartConfig? _defaultStartConfig;
 
-//后面的.obs是GetX包的语法，带.obs标志的会变成可观察的
+//后面的.obs是GetX包的语法，带.obs标志的会变成可观察的，这里可以看出，obs不仅适用于基础类型
+//还适用于复杂类型
   final startConfig = StartConfig().obs;
   final runningPort = 0.obs;
   final downloaderConfig = DownloaderConfig().obs;
-
+//AppLinks是指将用户直接转到Android/Apple应用内的http网址
+//就是我们常用的在浏览器打开某个链接会提示是否允许打开某个已安装的应用
+//参考 https://juejin.cn/post/6844903494760349703
   late AppLinks _appLinks;
+  //[Stream]事件订阅。
+  //如果你想使用[Stream.listen]监听一个[Stream]，那么就会返回一个[StreamSubscription]对象
+  //一个订阅会通知监听者发生的事件，并记录处理事件的回调。
+  //在本控制器中，订阅的是AppLinks，如果监听到有uri被打开，使用Gopeed打开
   StreamSubscription<Uri>? _linkSubscription;
 
+//重写的是GetxController里面的onReady方法
   @override
   void onReady() {
     super.onReady();
@@ -97,36 +106,46 @@ class AppController extends GetxController with WindowListener, TrayListener {
     }
   }
 
+//退出应用
   @override
   void onClose() {
     _linkSubscription?.cancel();
     trayManager.removeListener(this);
   }
 
+//退出界面
   @override
   void onWindowClose() async {
+    //如果在初始化里面设置了await windowManager.setPreventClose(true);
+    //那么点击关闭界面时，不会退出应用，而是隐藏到托盘
     final isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       windowManager.hide();
     }
   }
 
+//点击托盘图标弹出界面
   @override
   void onTrayIconMouseDown() {
     windowManager.show();
   }
 
+//右击托盘图标弹出菜单
   @override
   void onTrayIconRightMouseDown() {
     trayManager.popUpContextMenu();
   }
 
+//初始化深层链接，参考 https://pub-web.flutter-io.cn/packages/app_links/example
+//官方示例给的很详细，比葫芦画瓢就可以
   Future<void> _initDeepLinks() async {
     // currently only support android
     if (!Util.isAndroid()) {
       return;
     }
 
+    //根据ui/flutter/android/app/src/main/AndroidManifest.xml里面的配置，
+    //监听的主要是种子文件torrent及磁力链magnet
     _appLinks = AppLinks();
 
     // Handle link when app is in warm state (front or background)
@@ -141,6 +160,7 @@ class AppController extends GetxController with WindowListener, TrayListener {
     }
   }
 
+//桌面处理
   Future<void> _initWindows() async {
     if (!Util.isDesktop()) {
       return;
@@ -148,10 +168,12 @@ class AppController extends GetxController with WindowListener, TrayListener {
     windowManager.addListener(this);
   }
 
+//桌面托盘处理
   Future<void> _initTray() async {
     if (!Util.isDesktop()) {
       return;
     }
+    //托盘图标
     if (Util.isWindows()) {
       await trayManager.setIcon('assets/tray_icon/icon.ico');
     } else if (Util.isMacos()) {
@@ -160,9 +182,10 @@ class AppController extends GetxController with WindowListener, TrayListener {
     } else {
       await trayManager.setIcon('assets/tray_icon/icon.png');
     }
+    //托盘图标 menu包不兼容dart3,而且已经很久没维护了
     final menu = Menu(items: [
       MenuItem(
-        label: "create".tr,
+        label: "create".tr, //get包国际化语法，translate缩写
         onClick: (menuItem) async => {
           await windowManager.show(),
           await Get.rootDelegate.offAndToNamed(Routes.CREATE),
@@ -188,6 +211,7 @@ class AppController extends GetxController with WindowListener, TrayListener {
       MenuItem(
         label: 'donate'.tr,
         onClick: (menuItem) => {
+          //打开捐赠页面，模式设置为externalApplication，由系统决定用什么应用打开这个链接
           launchUrl(
               Uri.parse(
                   "https://github.com/GopeedLab/gopeed/blob/main/.donate/index.md#donate"),
@@ -207,10 +231,12 @@ class AppController extends GetxController with WindowListener, TrayListener {
     trayManager.addListener(this);
   }
 
+//处理链接
   Future<void> _toCreate(Uri uri) async {
     final path = uri.scheme == "magnet"
         ? uri.toString()
         : (await toFile(uri.toString())).path;
+    //路由到创建下载任务页面
     await Get.rootDelegate.offAndToNamed(Routes.CREATE, arguments: path);
   }
 
@@ -244,9 +270,12 @@ class AppController extends GetxController with WindowListener, TrayListener {
     return _defaultStartConfig!;
   }
 
+//加载启动配置
   Future<void> loadStartConfig() async {
     final defaultCfg = await _initDefaultStartConfig();
+    //shared_preferences是一个实现本地存储的包，但是不保证一定存储成功，所以包作者不建议存关键数据
     final prefs = await SharedPreferences.getInstance();
+    //从用户偏好中读取设置
     startConfig.value.network =
         prefs.getString(_startConfigNetwork) ?? defaultCfg.network;
     startConfig.value.address =

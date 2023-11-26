@@ -15,12 +15,14 @@ import 'util/package_info.dart';
 import 'util/util.dart';
 
 void main() async {
-  await init();
+  //async标识是一个异步函数
+  await init(); //await标识等待init执行完成才能执行下面的代码
   onStart();
 
   runApp(const AppView());
 }
 
+//初始化，主要是业务逻辑方面的，不是UI初始化，UI在AppView里面
 Future<void> init() async {
   //参考 https://juejin.cn/post/7031196891358429220
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,15 +44,17 @@ Future<void> init() async {
 //参考https://pub-web.flutter-io.cn/packages/get
 //注入依赖，把AppController实例注入到Get中，方便后续的管理
   final controller = Get.put(AppController());
+  //加载配置
   try {
     await controller.loadStartConfig();
     final startCfg = controller.startConfig.value;
+    //等待后端服务启动后获取端口号
     controller.runningPort.value = await LibgopeedBoot.instance.start(startCfg);
     api.init(startCfg.network, controller.runningAddress(), startCfg.apiToken);
   } catch (e) {
     logger.e("libgopeed init fail", e);
   }
-
+  //加载下载配置
   try {
     await controller.loadDownloaderConfig();
     MacSecureUtil.loadBookmark();
